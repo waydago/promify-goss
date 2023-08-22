@@ -93,7 +93,7 @@ Below is the data returned with the json outputter.At first glance we can alread
 
 Now if we pipe the validation command through promified we get a prom friendly file to be scraped and data to be queried like any other prometheus metric.
 
-```json
+```bash
 ± ~/gocode/promify-goss (main ✓) $ goss -g ./examples/demo.yaml validate -f json | ./promify-goss -path ./ -name demo.prom ; cat ./demo.prom
 goss_result_file{property="/srv/down",resource="exists",skipped="false"} 0
 goss_result_file_duration{property="/srv/down",resource="exists",skipped="false"} 45118
@@ -133,4 +133,3 @@ You can either specify the url of your Goss endpoint, or, pipe a goss validation
 - add Taskfile
 - write tests
 - improve pipeline
-- 

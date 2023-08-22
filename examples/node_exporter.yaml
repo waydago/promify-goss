@@ -1,0 +1,25 @@
+port:
+  tcp:9100:
+    listening: true
+    ip:
+    - 0.0.0.0
+service:
+  node_exporter:
+    enabled: false
+    running: true
+user:
+  node_exporter:
+    exists: true
+    uid: 1002
+    gid: 1002
+    groups:
+    - node_exporter
+    home: /home/node_exporter
+    shell: /bin/sh
+group:
+  node_exporter:
+    exists: true
+    gid: 1002
+process:
+  node_exporter:
+    running: true

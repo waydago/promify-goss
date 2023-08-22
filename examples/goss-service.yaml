@@ -1,0 +1,65 @@
+file:
+  /srv/down:
+    exists: false
+    contains: []
+    skip: true
+  /usr/local/bin/goss:
+    exists: true
+    mode: "0755"
+    size: 13148160
+    owner: eric
+    group: root
+    filetype: file
+    contains: []
+package:
+  netdata:
+    installed: true
+    versions:
+    - 1.33.1-1ubuntu1
+    skip: true
+service:
+  netdata:
+    enabled: true
+    running: true
+  node_exporter:
+    enabled: false
+    running: false
+user:
+  netdata:
+    exists: true
+    uid: 999
+    gid: 999
+    groups:
+    - adm
+    - netdata
+    home: /var/lib/netdata
+    shell: /bin/sh
+    skip: true
+  node_exporter:
+    exists: true
+    uid: 1002
+    gid: 1002
+    groups:
+    - node_exporter
+    home: /home/node_exporter
+    shell: /bin/sh
+    skip: true
+group:
+  netdata:
+    exists: true
+    gid: 999
+  node_exporter:
+    exists: true
+    gid: 1002
+command:
+  goss --version | cut -d" " -f3:
+    exit-status: 0
+    stdout:
+    - v0.3.20
+    stderr: []
+    timeout: 10000
+process:
+  goss:
+    running: true
+  netdata:
+    running: true

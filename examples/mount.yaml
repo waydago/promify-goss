@@ -1,0 +1,12 @@
+mount:
+  /:
+    # required attributes
+    exists: true
+    # optional attributes
+    opts:
+    - rw
+    - relatime
+    source: /dev/mapper/ubuntu--vg-ubuntu--lv
+    filesystem: ext4
+    usage: #% of blocks used in this mountpoint
+      lt: 95

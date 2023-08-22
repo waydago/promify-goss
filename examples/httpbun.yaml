@@ -1,0 +1,11 @@
+http:
+  http://httpbun.org/get:
+    # required attributes
+    status: 200
+    # optional attributes
+    allow-insecure: true
+    no-follow-redirects: false # Setting this to true will NOT follow redirects
+    timeout: 1000
+    request-headers: # Set request header values
+       - "Content-Type: application/json"
+    skip: false

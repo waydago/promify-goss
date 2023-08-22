@@ -1,0 +1,16 @@
+version: '3'
+
+vars:
+  BINARY_NAME: promify-goss
+
+tasks:
+  clean:
+    cmds:
+      - rm -fv ./build/{{.BINARY_NAME}}-linux-amd64 ./promify-goss 
+  build:
+    cmds:
+      - go build -o ./build/{{.BINARY_NAME}}-linux-amd64 .
+      - ln -s ./build/{{.BINARY_NAME}}-linux-amd64 ./promify-goss
+  install:
+    cmds:
+      - cp -vf ./build/{{.BINARY_NAME}} /usr/local/bin/

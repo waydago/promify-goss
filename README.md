@@ -2,6 +2,8 @@
 
 ## Convert your json formated [goss](https://github.com/goss-org/goss) tests to something more prom friendly
 
+Goss is a fantastic server testing and validation tool that is blazing fast. What it lacked is a way to ship these individual test results into Prometheus.
+
 Promify-goss is a simple text reformatter written in go to convert json formatted goss tests into prometheus style metrics. Promify-goss captures a wide variety of attributes to be used as query parameters.
 
 - test-type
@@ -19,6 +21,25 @@ Promify-goss is a simple text reformatter written in go to convert json formatte
 - test-count
 
 These key data points make event corelation trivial. Additionally this allows just about any 3rd party monitoring tool another way to collect pass/fail data. Be it Prometheus Alert Manager, Grafana Alerts and even Zabbix.
+
+---
+
+## Basic Usage
+
+Promified doen't have many options.
+
+```bash
+± ~/gocode/promify-goss (main U:2 ?:2 ✗) $ promify-goss --help
+  -dir string
+        Where do you want to store your .prom (default "/var/lib/node_exporter/textfile_collector")
+  -name string
+        Name your .prom here. Extension will be appended upon writing
+  -uri string
+        Goss endpoint to fetch the test results from.
+
+```
+
+You must specify the url of your Goss endpoint, or, pipe a goss validation test. Each method requires at least the name flag and worth noting an unspecified path will use the default        textfile_collector path shipped by node_exporter. If your node_exporter deployment has a custom textfile_collector you will need to specify that path or update your version of the go code to make your path the default and rebuild the program.
 
 ---
 
@@ -104,23 +125,6 @@ goss_results_summary{textfile="./demo.prom",name="failed"} 0
 goss_results_summary{textfile="./demo.prom",name="duration"} 525787516
 ```
 
-## Basic Usage
-
-Promified doen't have many options since it's just supposed to do one thing pretty alright.
-
-```bash
-± ~/gocode/promify-goss (main U:2 ?:2 ✗) $ promify-goss --help
-  -dir string
-    	Where do you want to store your .prom (default "/var/lib/node_exporter/textfile_collector")
-  -name string
-    	Name your .prom here. Extension will be appended upon writing
-  -uri string
-    	Goss endpoint to fetch the test results from.
-
-```
-
-You must specify the url of your Goss endpoint, or, pipe a goss validation test . Each method requires at least the name flag and worth noting an unspecified path will use the default textfile_collector path shipped by node_exporter. If your node_exporter deployment has a custom textfile_collector you will need to specify that path or update your version of the go code to make your path the default and rebuild the program.
-
 ### Using it yourself
 
 1. Install: `curl -fsSL https://goss.rocks/install | sh`
@@ -128,10 +132,7 @@ You must specify the url of your Goss endpoint, or, pipe a goss validation test 
 3. Build promified: `go build -o promify-goss .`
 4. Create a cron to continually run your test.
 
-### Resources
 
 ### To-Dos
 
-- add Taskfile
 - write tests
-- improve pipeline

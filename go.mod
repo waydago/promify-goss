@@ -1,3 +1,3 @@
-module github.com/waydago/promified
+module github.com/waydago/promify-goss
 
 go 1.20

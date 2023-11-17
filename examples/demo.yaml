@@ -1,4 +1,3 @@
 gossfile:
   ./srvdown.yaml: {}
   ./httpbun.yaml: {}
-  ./ssh.yaml: {}

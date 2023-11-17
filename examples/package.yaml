@@ -1,5 +1,0 @@
-package:
-  git:
-    installed: true
-    versions:
-    - 1:2.34.1-1ubuntu1.8

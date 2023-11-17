@@ -1,0 +1,18 @@
+http:
+  http://www.google.com:
+    # required attributes
+    status: 200
+    allow-insecure: false
+    no-follow-redirects: true # Setting this to true will NOT follow redirects
+    timeout: 1000
+    request-headers: # Set request header values
+       - "Content-Type: text/html"
+  google_https:
+    # required attributes
+    status: 200
+    url: https://www.google.com
+    allow-insecure: false
+    no-follow-redirects: false # Setting this to true will NOT follow redirects
+    timeout: 1000
+    request-headers: # Set request header values
+       - "Content-Type: text/html"

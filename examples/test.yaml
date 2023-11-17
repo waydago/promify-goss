@@ -1,0 +1,11 @@
+file:
+    promify_binary:
+        path: promify-goss
+        exists: true
+        mode: "0755"
+        owner: guy
+        group: guy
+        filetype: file
+        size: 2607593
+        md5: 1348be9cb2209f24d017ce90a226f8cc
+        contents: []

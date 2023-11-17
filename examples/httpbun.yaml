@@ -1,5 +1,6 @@
 http:
-  http://httpbun.org/get:
+  httpbun:
+    url: http://httpbun.org/get
     # required attributes
     status: 200
     # optional attributes

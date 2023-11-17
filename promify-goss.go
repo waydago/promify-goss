@@ -8,16 +8,15 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"os"
+	"regexp"
 	"strings"
 )
 
-var GossURI string
-var TextFilePath string
-var PromFileName string
+var LocalPath string
+var FileName string
 
-type TestResults struct {
+type Results struct {
 	Tested  *[]Tested `json:"results,omitempty"`
 	Summary *Summary  `json:"summary,omitempty"`
 }
@@ -41,23 +40,9 @@ type Summary struct {
 	TotalDuration int64 `json:"total-duration,omitempty"`
 }
 
-func LoadArgs(piped bool, GossURI string, FileName string) {}
-
-func IncludeUsageInError() {
-	//fmt.Printf("Usage:\n")
-	flag.PrintDefaults()
-	os.Exit(1)
-}
-
-func CheckRequiredArgs(piped bool, GossURI string, FileName string) {
-	if !piped && len(GossURI) == 0 {
-		fmt.Printf("Error: expected a goss uri\n")
-		IncludeUsageInError()
-		os.Exit(1)
-	}
-	if FileName == "nill" || len(FileName) == 0  {
+func CheckRequiredArgs(piped bool, FileName string) {
+	if FileName == "nill" || len(FileName) == 0 {
 		fmt.Printf("Error: expected a filename to write the .prom file as\n")
-		IncludeUsageInError()
 		os.Exit(1)
 	}
 }
@@ -69,10 +54,8 @@ func CheckIfPiped() bool {
 	}
 	if fi.Mode()&os.ModeNamedPipe != 0 {
 		return true
-		// return (CalledByPipe)
 	} else {
 		return false
-		// return (CalledByPipe)
 	}
 }
 
@@ -96,58 +79,38 @@ func LoadPipedData() []byte {
 	return Buf.Bytes()
 }
 
-
-func GetResultsJSON(url string) ([]byte, error) {
-	c := &http.Client{}
-	r, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("accept", "application/json")
-
-	resp, err := c.Do(r)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	results, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return results, nil
-}
-
-func UnmarshalResultsJSON(data []byte) (TestResults, error) {
-	var r TestResults
+func UnmarshalResultsJSON(data []byte) (Results, error) {
+	var r Results
 	err := json.Unmarshal(data, &r)
 	return r, err
 }
 
-func (r *TestResults) Marshal() ([]byte, error) {
-	return json.Marshal(r)
-}
-
-func (r *Tested) String() string {
-	s, err := json.Marshal(r)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return string(s)
-}
-
-func FormatPromFriendly(r *TestResults, f *os.File, t string) error {
+func FormatPromFriendly(r *Results, f *os.File, t string) error {
 	for _, result := range *r.Tested {
 		var resourceId string
 
+		fmt.Printf("Resource Type: %v\n", result.ResourceType)
+		fmt.Printf("Resource ID: %v\n", result.ResourceID)
+		fmt.Printf("Resource Property: %v\n", result.Property)
+
 		switch result.ResourceType {
-		case "Addr":
-			resourceId = result.ResourceID
+		case "HTTP":
+			re := regexp.MustCompile(`^([a-zA-Z0-9_]+): .*//.*$`)
+			match := re.FindStringSubmatch(result.ResourceID)
+			if len(match) > 1 {
+				resourceId = strings.Split(result.ResourceID, ":")[0]
+			} else {
+				resourceId = result.ResourceID
+			}
+		case "Port":
+			re := regexp.MustCompile(`^([a-zA-Z0-9_]+): `)
+			match := re.FindStringSubmatch(result.ResourceID)
+			if len(match) > 1 {
+				resourceId = strings.ReplaceAll(result.ResourceID, ": ", "\", port=\"")
+			} else {
+				resourceId = result.ResourceID
+			}
+
 		case "Command":
 			commandId := strings.Split(result.ResourceID, "|")
 			resourceId = strings.TrimRight(strings.Replace(commandId[0], " -", "", -1), " ")
@@ -170,7 +133,7 @@ func FormatPromFriendly(r *TestResults, f *os.File, t string) error {
 	return nil
 }
 
-func WritePromFileFriendly(r *TestResults, dotprom string, t string) error {
+func WritePromFileFriendly(r *Results, dotprom string, t string) error {
 	f, err := os.Create(dotprom)
 	if err != nil {
 		return err
@@ -186,53 +149,26 @@ func WritePromFileFriendly(r *TestResults, dotprom string, t string) error {
 	return nil
 }
 
-
 func main() {
 
 	piped := CheckIfPiped()
-	
-	LoadArgs(piped, GossURI, PromFileName)
 
-	if !piped {
-		flag.StringVar(&GossURI, "uri", "", "Goss endpoint to fetch data from.")
-	}
-
-	flag.StringVar(&TextFilePath, "path", "/var/lib/node_exporter/textfile_collector", "Where to store the .prom file")
-	flag.StringVar(&PromFileName, "name", "", "Name your .prom")
+	flag.StringVar(&LocalPath, "path", "/var/lib/node_exporter/textfile_collector", "Where to store the .prom file")
+	flag.StringVar(&FileName, "name", "", "Name your .prom")
 
 	flag.Parse()
 
-	CheckRequiredArgs(piped, GossURI, PromFileName)
+	CheckRequiredArgs(piped, FileName)
 
-	File := fmt.Sprintf("%v/%v", TextFilePath, PromFileName)
+	File := fmt.Sprintf("%v/%v", LocalPath, FileName)
 
-	if piped {
+	DataPiped := LoadPipedData()
 
-		DataPiped := LoadPipedData()
-
-		results, err := UnmarshalResultsJSON(DataPiped)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		WritePromFileFriendly(&results, File, PromFileName)
-
-	} else {
-
-		Response, err := GetResultsJSON(GossURI)
-		if err != nil {
-			log.Fatal(err)
-		} else if Response == nil {
-			log.Fatal("No response from the server!")
-		}
-
-		results, err := UnmarshalResultsJSON(Response)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		WritePromFileFriendly(&results, File, PromFileName)
-
+	results, err := UnmarshalResultsJSON(DataPiped)
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	WritePromFileFriendly(&results, File, FileName)
 
 }

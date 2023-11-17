@@ -1,0 +1,7 @@
+port:
+  ssh:
+    listening: true
+    port: 'tcp:22'
+    ip: # what IP(s) is it listening on
+    - 0.0.0.0
+    skip: false

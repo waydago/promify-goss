@@ -98,10 +98,6 @@ func formatPromFriendly(r *Results, f *os.File, t string) error {
 	for _, result := range *r.Tested {
 		var resourceId string
 
-		fmt.Printf("Resource Type: %v\n", result.ResourceType)
-		fmt.Printf("Resource ID: %v\n", result.ResourceID)
-		fmt.Printf("Resource Property: %v\n", result.Property)
-
 		switch result.ResourceType {
 		case "HTTP":
 			re := regexp.MustCompile(`^([a-zA-Z0-9_]+): .*//.*$`)
@@ -179,9 +175,7 @@ func main() {
 	DataPiped := loadPipedData()
 
 	results, err := unmarshalResultsJSON(DataPiped)
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkError(err)
 
 	err = writePromFileFriendly(&results, File, fileName)
 	checkError(err)

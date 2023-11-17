@@ -13,14 +13,16 @@ import (
 	"strings"
 )
 
-var LocalPath string
-var FileName string
+var localPath string
+var fileName string
 
+// Results is the struct for the JSON output from goss
 type Results struct {
 	Tested  *[]Tested `json:"results,omitempty"`
 	Summary *Summary  `json:"summary,omitempty"`
 }
 
+// Tested is the struct for the JSON output from goss
 type Tested struct {
 	Duration     int64    `json:"duration,omitempty"`
 	Expected     []string `json:"expected,omitempty"`
@@ -34,20 +36,27 @@ type Tested struct {
 	TestType     int64    `json:"test-type,omitempty"`
 }
 
+// Summary is the struct for the JSON output from goss
 type Summary struct {
 	FailedCount   int64 `json:"failed-count,omitempty"`
 	TestCount     int64 `json:"test-count,omitempty"`
 	TotalDuration int64 `json:"total-duration,omitempty"`
 }
 
-func CheckRequiredArgs(piped bool, FileName string) {
-	if FileName == "nill" || len(FileName) == 0 {
+func checkError(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func checkRequiredArgs(piped bool, fileName string) {
+	if fileName == "nill" || len(fileName) == 0 {
 		fmt.Printf("Error: expected a filename to write the .prom file as\n")
 		os.Exit(1)
 	}
 }
 
-func CheckIfPiped() bool {
+func checkIfPiped() bool {
 	fi, err := os.Stdin.Stat()
 	if err != nil {
 		log.Println(err)
@@ -59,7 +68,7 @@ func CheckIfPiped() bool {
 	}
 }
 
-func LoadPipedData() []byte {
+func loadPipedData() []byte {
 	var Buf bytes.Buffer
 	reader := bufio.NewReader(os.Stdin)
 
@@ -79,13 +88,13 @@ func LoadPipedData() []byte {
 	return Buf.Bytes()
 }
 
-func UnmarshalResultsJSON(data []byte) (Results, error) {
+func unmarshalResultsJSON(data []byte) (Results, error) {
 	var r Results
 	err := json.Unmarshal(data, &r)
 	return r, err
 }
 
-func FormatPromFriendly(r *Results, f *os.File, t string) error {
+func formatPromFriendly(r *Results, f *os.File, t string) error {
 	for _, result := range *r.Tested {
 		var resourceId string
 
@@ -120,26 +129,31 @@ func FormatPromFriendly(r *Results, f *os.File, t string) error {
 			resourceId = result.ResourceID
 		}
 
-		f.WriteString(fmt.Sprintf("goss_result_%v{property=\"%v\",resource=\"%v\",skipped=\"%t\"} %v\n",
+		_, err := f.WriteString(fmt.Sprintf("goss_result_%v{property=\"%v\",resource=\"%v\",skipped=\"%t\"} %v\n",
 			strings.ToLower(result.ResourceType), resourceId, result.Property, result.Skipped, result.Result))
-		f.WriteString(fmt.Sprintf("goss_result_%v_duration{property=\"%v\",resource=\"%v\",skipped=\"%t\"} %v\n",
+		checkError(err)
+		_, err = f.WriteString(fmt.Sprintf("goss_result_%v_duration{property=\"%v\",resource=\"%v\",skipped=\"%t\"} %v\n",
 			strings.ToLower(result.ResourceType), resourceId, result.Property, result.Skipped, result.Duration))
+		checkError(err)
 	}
 
-	f.WriteString(fmt.Sprintf("goss_results_summary{textfile=\"%v\",name=\"tested\"} %v\n", t, r.Summary.TestCount))
-	f.WriteString(fmt.Sprintf("goss_results_summary{textfile=\"%v\",name=\"failed\"} %v\n", t, r.Summary.FailedCount))
-	f.WriteString(fmt.Sprintf("goss_results_summary{textfile=\"%v\",name=\"duration\"} %v\n", t, r.Summary.TotalDuration))
+	_, err := f.WriteString(fmt.Sprintf("goss_results_summary{textfile=\"%v\",name=\"tested\"} %v\n", t, r.Summary.TestCount))
+	checkError(err)
+	_, err = f.WriteString(fmt.Sprintf("goss_results_summary{textfile=\"%v\",name=\"failed\"} %v\n", t, r.Summary.FailedCount))
+	checkError(err)
+	_, err = f.WriteString(fmt.Sprintf("goss_results_summary{textfile=\"%v\",name=\"duration\"} %v\n", t, r.Summary.TotalDuration))
+	checkError(err)
 
 	return nil
 }
 
-func WritePromFileFriendly(r *Results, dotprom string, t string) error {
+func writePromFileFriendly(r *Results, dotprom string, t string) error {
 	f, err := os.Create(dotprom)
 	if err != nil {
 		return err
 	}
 
-	err = FormatPromFriendly(r, f, t)
+	err = formatPromFriendly(r, f, t)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -151,24 +165,25 @@ func WritePromFileFriendly(r *Results, dotprom string, t string) error {
 
 func main() {
 
-	piped := CheckIfPiped()
+	piped := checkIfPiped()
 
-	flag.StringVar(&LocalPath, "path", "/var/lib/node_exporter/textfile_collector", "Where to store the .prom file")
-	flag.StringVar(&FileName, "name", "", "Name your .prom")
+	flag.StringVar(&localPath, "path", "/var/lib/node_exporter/textfile_collector", "Where to store the .prom file")
+	flag.StringVar(&fileName, "name", "", "Name your .prom")
 
 	flag.Parse()
 
-	CheckRequiredArgs(piped, FileName)
+	checkRequiredArgs(piped, fileName)
 
-	File := fmt.Sprintf("%v/%v", LocalPath, FileName)
+	File := fmt.Sprintf("%v/%v", localPath, fileName)
 
-	DataPiped := LoadPipedData()
+	DataPiped := loadPipedData()
 
-	results, err := UnmarshalResultsJSON(DataPiped)
+	results, err := unmarshalResultsJSON(DataPiped)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	WritePromFileFriendly(&results, File, FileName)
+	err = writePromFileFriendly(&results, File, fileName)
+	checkError(err)
 
 }

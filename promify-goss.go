@@ -63,9 +63,8 @@ func checkIfPiped() bool {
 	}
 	if fi.Mode()&os.ModeNamedPipe != 0 {
 		return true
-	} else {
-		return false
 	}
+	return false
 }
 
 func loadPipedData() []byte {
@@ -96,40 +95,40 @@ func unmarshalResultsJSON(data []byte) (Results, error) {
 
 func formatPromFriendly(r *Results, f *os.File, t string) error {
 	for _, result := range *r.Tested {
-		var resourceId string
+		var resourceID string
 
 		switch result.ResourceType {
 		case "HTTP":
 			re := regexp.MustCompile(`^([a-zA-Z0-9_]+): .*//.*$`)
 			match := re.FindStringSubmatch(result.ResourceID)
 			if len(match) > 1 {
-				resourceId = strings.Split(result.ResourceID, ":")[0]
+				resourceID = strings.Split(result.ResourceID, ":")[0]
 			} else {
-				resourceId = result.ResourceID
+				resourceID = result.ResourceID
 			}
 		case "Port":
 			re := regexp.MustCompile(`^([a-zA-Z0-9_]+): `)
 			match := re.FindStringSubmatch(result.ResourceID)
 			if len(match) > 1 {
-				resourceId = strings.ReplaceAll(result.ResourceID, ": ", "\", port=\"")
+				resourceID = strings.ReplaceAll(result.ResourceID, ": ", "\", port=\"")
 			} else {
-				resourceId = result.ResourceID
+				resourceID = result.ResourceID
 			}
-
 		case "Command":
-			commandId := strings.Split(result.ResourceID, "|")
-			resourceId = strings.TrimRight(strings.Replace(commandId[0], " -", "", -1), " ")
+			commandID := strings.Split(result.ResourceID, "|")
+			commandID = strings.Split(commandID[0], " ")
+			resourceID = strings.TrimRight(strings.Replace(commandID[0], " -", "", -1), " ")
 		case "Process":
-			resourceId = strings.ReplaceAll(result.ResourceID, "/", "_")
+			resourceID = strings.ReplaceAll(result.ResourceID, "/", "_")
 		default:
-			resourceId = result.ResourceID
+			resourceID = result.ResourceID
 		}
 
 		_, err := f.WriteString(fmt.Sprintf("goss_result_%v{property=\"%v\",resource=\"%v\",skipped=\"%t\"} %v\n",
-			strings.ToLower(result.ResourceType), resourceId, result.Property, result.Skipped, result.Result))
+			strings.ToLower(result.ResourceType), resourceID, result.Property, result.Skipped, result.Result))
 		checkError(err)
 		_, err = f.WriteString(fmt.Sprintf("goss_result_%v_duration{property=\"%v\",resource=\"%v\",skipped=\"%t\"} %v\n",
-			strings.ToLower(result.ResourceType), resourceId, result.Property, result.Skipped, result.Duration))
+			strings.ToLower(result.ResourceType), resourceID, result.Property, result.Skipped, result.Duration))
 		checkError(err)
 	}
 

@@ -112,3 +112,25 @@ func TestWritePromFileFriendly(t *testing.T) {
 		t.Errorf("Expected string 'goss_result_file' not found in output")
 	}
 }
+
+func TestFormatPromFriendly(t *testing.T) {
+	type args struct {
+		r *Results
+		f *os.File
+		t string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := formatPromFriendly(tt.args.r, tt.args.f, tt.args.t); (err != nil) != tt.wantErr {
+				t.Errorf("formatPromFriendly() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

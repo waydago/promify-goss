@@ -22,4 +22,4 @@ tasks:
       - ln -s ./build/{{.BINARY_NAME}}-linux-amd64 ./{{.BINARY_NAME}}
   install:
     cmds:
-      - cp -vf ./build/{{.BINARY_NAME}} /usr/local/bin/
+      - sudo cp -vf ./build/{{.BINARY_NAME}}-linux-amd64 /usr/local/bin/{{.BINARY_NAME}}
